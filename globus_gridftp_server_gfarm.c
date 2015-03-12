@@ -100,12 +100,6 @@ globus_l_gfs_gfarm_start(
 	finished_info.info.session.home_dir = "/";
 	finished_info.result = GLOBUS_SUCCESS;
 
-	gfarm_gsi_set_delegated_cred(session_info->del_cred);
-	globus_gfs_log_message(
-		GLOBUS_GFS_LOG_INFO,
-		"[gfarm-dsi] gfarm_gsi_client_cred_name: %s\n",
-		gfarm_gsi_client_cred_name());
-
 	globus_mutex_init(&gfarm_handle->mutex, NULL);
 	gfarm_handle->buffers_initialized = GLOBUS_FALSE;
 	gfarm_handle->path = NULL;
@@ -117,6 +111,11 @@ globus_l_gfs_gfarm_start(
 				"gfarm_initialize",
 				gfarm_error_to_errno(e));
 	}
+	gfarm_gsi_set_delegated_cred(session_info->del_cred);
+	globus_gfs_log_message(
+		GLOBUS_GFS_LOG_INFO,
+		"[gfarm-dsi] gfarm_gsi_client_cred_name: %s\n",
+		gfarm_gsi_client_cred_name());
 
 	globus_gridftp_server_operation_finished(
 		op, finished_info.result, &finished_info);
