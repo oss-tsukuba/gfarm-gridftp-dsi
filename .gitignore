@@ -1,6 +1,7 @@
 *~
 Makefile
 stamp-h1
+libtool
 autom4te.cache
 config.h
 config.log
