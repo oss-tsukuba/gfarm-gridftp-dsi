@@ -1,0 +1,12 @@
+*~
+Makefile
+stamp-h1
+autom4te.cache
+config.h
+config.log
+config.status
+globus_gridftp_server_gfarm.lo
+globus_gridftp_server_gfarm.o
+libglobus_gridftp_server_gfarm.la
+.libs/
+.deps/
