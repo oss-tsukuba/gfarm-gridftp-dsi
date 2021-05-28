@@ -4,6 +4,7 @@
 AC_PREREQ(2.59)
 AC_INIT([gfarm_gridftp_dsi], [1.0.5])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([globus_gridftp_server_gfarm.c])
 AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
