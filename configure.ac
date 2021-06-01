@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.59)
-AC_INIT([gfarm_gridftp_dsi], [1.0.5])
+AC_INIT([gfarm-gridftp-dsi], [1.0.5])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([globus_gridftp_server_gfarm.c])
@@ -28,11 +28,11 @@ PKG_CHECK_MODULES([GRIDFTP_SERVER], [globus-gridftp-server])
 ### update libdir to install libglobus_gridftp_server_gfarm.so in the
 ### same directory as libglobus_gridftp_server.so
 AC_MSG_CHECKING([libdir for globus-gridftp-server])
-PKG_CHECK_VAR([GRIDFTP_SERVER_LIBDIR], [globus-gridftp-server], [libdir])
-AS_IF([test "x$GRIDFTP_SERVER_LIBDIR" = "x"], [
-  AC_MSG_FAILURE([libdir for globus-gridftp-server not found])
-])
-libdir=$GRIDFTP_SERVER_LIBDIR
+PKG_CHECK_VAR([GRIDFTP_SERVER_PREFIX], [globus-gridftp-server], [exec_prefix],,
+  AC_MSG_FAILURE([exec_prefix not found in globus-gridftp-server]))
+PKG_CHECK_VAR([GRIDFTP_SERVER_LIBDIR], [globus-gridftp-server], [libdir],,
+  AC_MSG_FAILURE([libdir not found in globus-gridftp-server]))
+libdir=$(echo $GRIDFTP_SERVER_LIBDIR | sed 's|'$GRIDFTP_SERVER_PREFIX'|${exec_prefix}|')
 AC_SUBST([libdir])
 AC_MSG_RESULT($libdir)
 
