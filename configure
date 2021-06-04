@@ -634,7 +634,6 @@ am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
 GRIDFTP_SERVER_LIBDIR
-GRIDFTP_SERVER_PREFIX
 GRIDFTP_SERVER_LIBS
 GRIDFTP_SERVER_CFLAGS
 GFARM_LIBS
@@ -788,7 +787,6 @@ GFARM_CFLAGS
 GFARM_LIBS
 GRIDFTP_SERVER_CFLAGS
 GRIDFTP_SERVER_LIBS
-GRIDFTP_SERVER_PREFIX
 GRIDFTP_SERVER_LIBDIR'
 
 
@@ -1465,9 +1463,6 @@ Some influential environment variables:
               C compiler flags for GRIDFTP_SERVER, overriding pkg-config
   GRIDFTP_SERVER_LIBS
               linker flags for GRIDFTP_SERVER, overriding pkg-config
-  GRIDFTP_SERVER_PREFIX
-              value of exec_prefix for globus-gridftp-server, overriding
-              pkg-config
   GRIDFTP_SERVER_LIBDIR
               value of libdir for globus-gridftp-server, overriding pkg-config
 
@@ -12769,36 +12764,6 @@ $as_echo "yes" >&6; }
 
 fi
 
-### update libdir to install libglobus_gridftp_server_gfarm.so in the
-### same directory as libglobus_gridftp_server.so
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking libdir for globus-gridftp-server" >&5
-$as_echo_n "checking libdir for globus-gridftp-server... " >&6; }
-
-if test -n "$GRIDFTP_SERVER_PREFIX"; then
-    pkg_cv_GRIDFTP_SERVER_PREFIX="$GRIDFTP_SERVER_PREFIX"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"globus-gridftp-server\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "globus-gridftp-server") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_GRIDFTP_SERVER_PREFIX=`$PKG_CONFIG --variable="exec_prefix" "globus-gridftp-server" 2>/dev/null`
-		      test "x$?" != "x0" && pkg_failed=yes
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-GRIDFTP_SERVER_PREFIX=$pkg_cv_GRIDFTP_SERVER_PREFIX
-
-if test "x$GRIDFTP_SERVER_PREFIX" = x""; then :
-  { { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "exec_prefix not found in globus-gridftp-server
-See \`config.log' for more details" "$LINENO" 5; }
-fi
 
 if test -n "$GRIDFTP_SERVER_LIBDIR"; then
     pkg_cv_GRIDFTP_SERVER_LIBDIR="$GRIDFTP_SERVER_LIBDIR"
@@ -12825,10 +12790,13 @@ $as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
 as_fn_error $? "libdir not found in globus-gridftp-server
 See \`config.log' for more details" "$LINENO" 5; }
 fi
-libdir=$(echo $GRIDFTP_SERVER_LIBDIR | sed 's|'$GRIDFTP_SERVER_PREFIX'|${exec_prefix}|')
+{ $as_echo "$as_me:${as_lineno-$LINENO}: libglobus_gridftp_server_gfarm.so will be installed into ${libdir}" >&5
+$as_echo "$as_me: libglobus_gridftp_server_gfarm.so will be installed into ${libdir}" >&6;}
+if test "x$libdir" != "x$GRIDFTP_SERVER_LIBDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: It might be better to use --libdir=$GRIDFTP_SERVER_LIBDIR" >&5
+$as_echo "$as_me: WARNING: It might be better to use --libdir=$GRIDFTP_SERVER_LIBDIR" >&2;}
+fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $libdir" >&5
-$as_echo "$libdir" >&6; }
 
 # Checks for typedefs, structures, and compiler characteristics.
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for an ANSI C-conforming const" >&5
