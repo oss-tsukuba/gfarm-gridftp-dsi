@@ -25,16 +25,13 @@ PKG_CHECK_MODULES([GFARM], [gfarm >= 2.4.2])
 # Checks for globus-gridftp-server.
 PKG_CHECK_MODULES([GRIDFTP_SERVER], [globus-gridftp-server])
 
-### update libdir to install libglobus_gridftp_server_gfarm.so in the
-### same directory as libglobus_gridftp_server.so
-AC_MSG_CHECKING([libdir for globus-gridftp-server])
-PKG_CHECK_VAR([GRIDFTP_SERVER_PREFIX], [globus-gridftp-server], [exec_prefix],,
-  AC_MSG_FAILURE([exec_prefix not found in globus-gridftp-server]))
 PKG_CHECK_VAR([GRIDFTP_SERVER_LIBDIR], [globus-gridftp-server], [libdir],,
   AC_MSG_FAILURE([libdir not found in globus-gridftp-server]))
-libdir=$(echo $GRIDFTP_SERVER_LIBDIR | sed 's|'$GRIDFTP_SERVER_PREFIX'|${exec_prefix}|')
-AC_SUBST([libdir])
-AC_MSG_RESULT($libdir)
+AC_MSG_NOTICE([libglobus_gridftp_server_gfarm.so will be installed into ${libdir}])
+if test "x$libdir" != "x$GRIDFTP_SERVER_LIBDIR"; then
+  AC_MSG_WARN([It might be better to use --libdir=$GRIDFTP_SERVER_LIBDIR])
+fi
+
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
