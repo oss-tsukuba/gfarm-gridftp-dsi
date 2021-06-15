@@ -61,8 +61,25 @@ char *gfarm_gsi_client_cred_name(void);
 /* private function from lib/libgfarm/gfarm/auth_gsi.h */
 void gfarm_gsi_set_delegated_cred(gss_cred_id_t);
 
+/* private function from lib/libgfarm/gfarm/config.h */
+gfarm_error_t gfarm_config_local_name_to_string(const char *, char *, size_t);
+
 #define DSI_BLOCKSIZE   "GFARM_DSI_BLOCKSIZE"
 #define DSI_CONCURRENCY "GFARM_DSI_CONCURRENCY"
+
+static int
+gfarm_client_file_bufsize_from_conf() {
+	gfarm_error_t e;
+#define SIZE 64
+	char buf[SIZE];
+
+	e = gfarm_config_local_name_to_string(
+	    "client_file_bufsize", buf, SIZE);
+	if (e != GFARM_ERR_NO_ERROR) {
+		return (-1);
+	}
+	return (atoi(buf));
+}
 
 /*************************************************************************
  *  start
@@ -581,9 +598,14 @@ buffers_initialize(
 		gfarm_handle->concurrency = atoi(envstr);
 	else
 		gfarm_handle->concurrency = 0;
-	if (gfarm_handle->block_size <= 0)
-		globus_gridftp_server_get_block_size(
-			op, &gfarm_handle->block_size);
+	if (gfarm_handle->block_size <= 0) {
+		gfarm_handle->block_size =
+			gfarm_client_file_bufsize_from_conf();
+		if (gfarm_handle->block_size <= 0) {
+			globus_gridftp_server_get_block_size(
+				op, &gfarm_handle->block_size);
+		}
+	}
 	if (gfarm_handle->concurrency <= 0)
 		globus_gridftp_server_get_optimal_concurrency(
 			op, &gfarm_handle->concurrency);
