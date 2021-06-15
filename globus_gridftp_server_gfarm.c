@@ -268,7 +268,7 @@ globus_l_gfs_gfarm_stat(
 	int array_size = 4;
 	GlobusGFSName(globus_l_gfs_gfarm_stat);
 
-	/* = gfarm_handle = (globus_l_gfs_gfarm_handle_t *) user_arg; */
+	/* gfarm_handle = (globus_l_gfs_gfarm_handle_t *) user_arg; */
 	path = stat_info->pathname;
 
 	e = gfs_lstat_cached(path, &st);
