@@ -193,8 +193,7 @@ get_gid(const char *path, char *group)
 static int
 get_nlink(struct gfs_stat *st)
 {
-	/* XXX FIXME */
-	return (GFARM_S_ISDIR(st->st_mode) ? 32000 : st->st_nlink);
+	return (st->st_nlink);
 }
 
 static void
