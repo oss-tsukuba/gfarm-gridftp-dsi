@@ -31,16 +31,14 @@
 #undef PACKAGE_VERSION
 #include <gfarm/gfarm.h>
 
-static globus_version_t local_version =
-{
+static globus_version_t local_version = {
 	1, /* major version number */
 	0, /* minor version number */
 	1236013521,
 	0 /* branch ID */
 };
 
-typedef struct globus_l_gfs_gfarm_handle_s
-{
+typedef struct globus_l_gfs_gfarm_handle_s {
 	int concurrency;
 	globus_size_t block_size;
 	globus_bool_t buffers_initialized;
@@ -57,8 +55,11 @@ typedef struct globus_l_gfs_gfarm_handle_s
 	char *path;
 } globus_l_gfs_gfarm_handle_t;
 
-extern void gfarm_gsi_set_delegated_cred(gss_cred_id_t);
-extern char *gfarm_gsi_client_cred_name(void);
+/* private function from lib/libgfarm/gfarm/auth.h */
+char *gfarm_gsi_client_cred_name(void);
+
+/* private function from lib/libgfarm/gfarm/auth_gsi.h */
+void gfarm_gsi_set_delegated_cred(gss_cred_id_t);
 
 #define DSI_BLOCKSIZE   "GFARM_DSI_BLOCKSIZE"
 #define DSI_CONCURRENCY "GFARM_DSI_CONCURRENCY"
@@ -75,7 +76,7 @@ extern char *gfarm_gsi_client_cred_name(void);
  *  finished_info.info.session.session_arg should be set to an DSI
  *  defined data structure.  This pointer will be passed as the void *
  *  user_arg parameter to all other interface functions.
- * 
+ *
  *  NOTE: at nice wrapper function should exist that hides the details
  *        of the finished_info structure, but it currently does not.
  *        The DSI developer should jsut follow this template for now
@@ -218,11 +219,11 @@ stat_array_destroy(globus_gfs_stat_t *stat_array, int stat_count)
 	if (stat_array == NULL) {
 		return;
 	}
-	for(i = 0; i < stat_count; i++)	{
-		if(stat_array[i].name != NULL) {
+	for (i = 0; i < stat_count; i++) {
+		if (stat_array[i].name != NULL) {
 			globus_free(stat_array[i].name);
 		}
-		if(stat_array[i].symlink_target != NULL) {
+		if (stat_array[i].symlink_target != NULL) {
 			globus_free(stat_array[i].symlink_target);
 		}
 	}
@@ -277,7 +278,7 @@ globus_l_gfs_gfarm_stat(
 			"gfs_lstat",
 			gfarm_error_to_errno(e));
 		goto error;
-        }
+	}
 #if 0
 	if (GFARM_S_ISLNK(st.st_mode)) {
 		/* XXX replace st from gfs_stat() */
@@ -288,7 +289,7 @@ globus_l_gfs_gfarm_stat(
 	if (!is_dir || stat_info->file_only) { /* stat */
 		stat_array = (globus_gfs_stat_t *)
 			globus_malloc(sizeof(globus_gfs_stat_t));
-		if(stat_array == NULL) {
+		if (stat_array == NULL) {
 			result = GlobusGFSErrorMemory("stat_array");
 			goto error;
 		}
@@ -330,7 +331,7 @@ globus_l_gfs_gfarm_stat(
 			}
 			stat_array = tmp;
 		}
-		if(stat_array == NULL) {
+		if (stat_array == NULL) {
 			result = GlobusGFSErrorMemory("stat_array");
 			gfs_closedir(dp);
 			stat_count--;
@@ -419,9 +420,8 @@ gfarm_mkdir(globus_gfs_operation_t op, const char *pathname)
 	umask(um);
 	e = gfs_mkdir(pathname, 0777 & ~um);
 	if (e != GFARM_ERR_NO_ERROR) {
-		return GlobusGFSErrorSystemError(
-			"gfs_mkdir",
-			gfarm_error_to_errno(e));
+		return (GlobusGFSErrorSystemError("gfs_mkdir",
+		    gfarm_error_to_errno(e)));
 	}
 	uncache_parent(pathname);
 	return (GLOBUS_SUCCESS);
@@ -435,9 +435,8 @@ gfarm_rmdir(globus_gfs_operation_t op, const char *pathname)
 
 	e = gfs_rmdir(pathname);
 	if (e != GFARM_ERR_NO_ERROR) {
-		return GlobusGFSErrorSystemError(
-			"gfs_rmdir",
-			gfarm_error_to_errno(e));
+		return (GlobusGFSErrorSystemError("gfs_rmdir",
+		    gfarm_error_to_errno(e)));
 	}
 	uncache(pathname);
 	uncache_parent(pathname);
@@ -452,9 +451,8 @@ gfarm_delete(globus_gfs_operation_t op, const char *pathname)
 
 	e = gfs_unlink(pathname);
 	if (e != GFARM_ERR_NO_ERROR) {
-		return GlobusGFSErrorSystemError(
-			"gfs_unlink",
-			gfarm_error_to_errno(e));
+		return (GlobusGFSErrorSystemError("gfs_unlink",
+		    gfarm_error_to_errno(e)));
 	}
 	uncache(pathname);
 	uncache_parent(pathname);
@@ -469,9 +467,8 @@ gfarm_rename(globus_gfs_operation_t op, const char *from, const char *to)
 
 	e = gfs_rename(from, to);
 	if (e != GFARM_ERR_NO_ERROR) {
-		return GlobusGFSErrorSystemError(
-			"gfs_rename",
-			gfarm_error_to_errno(e));
+		return (GlobusGFSErrorSystemError("gfs_rename",
+		    gfarm_error_to_errno(e)));
 	}
 	uncache(from);
 	uncache_parent(from);
@@ -488,9 +485,8 @@ gfarm_chmod(globus_gfs_operation_t op, const char *pathname, mode_t mode)
 
 	e = gfs_chmod(pathname, mode & 0777);
 	if (e != GFARM_ERR_NO_ERROR) {
-		return GlobusGFSErrorSystemError(
-			"gfs_chmod",
-			gfarm_error_to_errno(e));
+		return (GlobusGFSErrorSystemError("gfs_chmod",
+		    gfarm_error_to_errno(e)));
 	}
 	uncache(pathname);
 	return (GLOBUS_SUCCESS);
@@ -601,14 +597,14 @@ buffers_initialize(
 		"[gfarm-dsi] %s=%d\n", DSI_CONCURRENCY,
 		gfarm_handle->concurrency);
 
-	gfarm_handle->buffers = (globus_byte_t**) globus_calloc(
-		gfarm_handle->concurrency, sizeof(globus_byte_t*));
+	gfarm_handle->buffers = (globus_byte_t **) globus_calloc(
+		gfarm_handle->concurrency, sizeof(globus_byte_t *));
 	if (gfarm_handle->buffers == NULL) {
 		result = GlobusGFSErrorMemory("buffers");
 		goto error;
 	}
 	for (i = 0; i < gfarm_handle->concurrency; i++) {
-		gfarm_handle->buffers[i] = (globus_byte_t*) globus_malloc(
+		gfarm_handle->buffers[i] = (globus_byte_t *) globus_malloc(
 			sizeof(globus_byte_t) * gfarm_handle->block_size);
 		if (gfarm_handle->buffers[i] == NULL) {
 			result = GlobusGFSErrorMemory("buffer");
@@ -664,7 +660,7 @@ gfarm_import_cb(
 		result = GlobusGFSErrorSystemError(
 			"gfs_pio_write", gfarm_error_to_errno(e));
 		gfarm_handle->eof = GLOBUS_TRUE;
-                goto finish;
+		goto finish;
 	}
 	uncache(gfarm_handle->path);
 	gfarm_handle->offset = offset + rv;
@@ -872,7 +868,7 @@ globus_l_gfs_gfarm_send(
 			 GFARM_SEEK_SET, &o);
 	if (e != GFARM_ERR_NO_ERROR) {
 		result = GlobusGFSErrorSystemError("gfs_pio_seek",
-                                                   gfarm_error_to_errno(e));
+		    gfarm_error_to_errno(e));
 		goto error;
 	}
 	result = buffers_initialize(op, gfarm_handle);
@@ -890,17 +886,14 @@ error:
 	return;
 }
 
-static int
-globus_l_gfs_gfarm_activate(void);
+static int globus_l_gfs_gfarm_activate(void);
 
-static int
-globus_l_gfs_gfarm_deactivate(void);
+static int globus_l_gfs_gfarm_deactivate(void);
 
 /*
  *  no need to change this
  */
-static globus_gfs_storage_iface_t globus_l_gfs_gfarm_dsi_iface =
-{
+static globus_gfs_storage_iface_t globus_l_gfs_gfarm_dsi_iface = {
 	GLOBUS_GFS_DSI_DESCRIPTOR_BLOCKING | GLOBUS_GFS_DSI_DESCRIPTOR_SENDER,
 	globus_l_gfs_gfarm_start,
 	globus_l_gfs_gfarm_destroy,
@@ -920,8 +913,7 @@ static globus_gfs_storage_iface_t globus_l_gfs_gfarm_dsi_iface =
 /*
  *  no need to change this
  */
-GlobusExtensionDefineModule(globus_gridftp_server_gfarm) =
-{
+GlobusExtensionDefineModule(globus_gridftp_server_gfarm) = {
 	"globus_gridftp_server_gfarm",
 	globus_l_gfs_gfarm_activate,
 	globus_l_gfs_gfarm_deactivate,
