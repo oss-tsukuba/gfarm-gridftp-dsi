@@ -29,8 +29,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc README.en
-%doc README.ja
+%doc README.en.md
+%doc README.ja.md
 %doc RELNOTES
 %doc LICENSE
 %{_libdir}/libglobus_gridftp_server_gfarm.a
