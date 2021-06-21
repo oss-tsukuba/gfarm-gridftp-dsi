@@ -65,11 +65,11 @@ load_dsi_module gfarm
 or specify -dsi gfarm option as a command line argument of
 globus-gridftp-server.
 
-When you use gfarm-gridftp-dsi, specifying blocksize in the
-configuration file of globus-gridftp-server or specifying the -bs
-option as a command line argument has no effect. The same size as the
-Gfarm client_file_bufsize (which can be changed in the Gfarm
-configuration) is specified in the blocksize of globus-gridftp-server.
+With gfarm-gridftp-dsi, the block size can be specified by
+client_file_bufsize in a Gfarm configuration file.  The block size
+specified by the blocksize in the configuration file of
+globus-gridftp-server or by the -bs option of a command line argument
+is ignored.
 
 For other settings of globus-gridftp-server, see the following:
 

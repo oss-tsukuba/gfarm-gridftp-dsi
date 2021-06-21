@@ -65,11 +65,10 @@ load_dsi_module gfarm
 または globus-gridftp-server のコマンドライン引数に -dsi gfarm
 オプションを指定します。
 
-gfarm-gridftp-dsi を使用する場合、globus-gridftp-server の設定ファイルに
-blocksize を指定、またはコマンドライン引数
--bs オプションを指定しても効果ありません。
-Gfarm の client_file_bufsize (Gfarm の設定で変更可能)
-と同じサイズが globus-gridftp-server の blocksize に指定されます。
+gfarm-gridftp-dsi を使用する場合、globus-gridftp-server の設定ファイルの
+blocksize、またはコマンドライン引数の -bs オプションは効果がありません。
+その代わりに、Gfarm の client_file_bufsize (Gfarm の設定で変更可能)
+で指定します。
 
 その他 globus-gridftp-server の設定については以下を参照してください。
 

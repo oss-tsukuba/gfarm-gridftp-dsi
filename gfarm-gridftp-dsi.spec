@@ -29,7 +29,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc README.en.md
+%doc README.md
 %doc README.ja.md
 %doc RELNOTES
 %doc LICENSE

@@ -1,3 +1,13 @@
+Release note for Gfarm GridFTP DSI 1.0.5
+========================================
+
+[2021.6.21]
+
+Updated feature
+* support Grid Community Toolkit (GCT) 6.2.
+* blocksize can be specified by client_file_bufsize in Gfarm
+  configuration file
+
 Release note for Gfarm GridFTP DSI 1.0.4
 ========================================
 
