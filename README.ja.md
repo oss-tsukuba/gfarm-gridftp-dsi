@@ -8,7 +8,7 @@ GridFTP クライアントから GridFTP サーバ (globus-gridftp-server) を�
 - GridFTP server (globus-gridftp-server)
   - https://gridcf.org/gct-docs/latest/gridftp/admin/index.html
   - 依存パッケージ名
-    - Debian 系: globus-gridftp-server-progs globus-gridftp-server-dev
+    - Debian 系: globus-gridftp-server-progs libglobus-gridftp-server-dev
     - RedHat 系: globus-gridftp-server-progs globus-gridftp-server-devel
       - これらは EPEL に含まれます。EPEL は以下で利用できます。
       - yum install epel-release

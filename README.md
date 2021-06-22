@@ -8,7 +8,7 @@ server (globus-gridftp-server).
 - GridFTP server (globus-gridftp-server)
   - https://gridcf.org/gct-docs/latest/gridftp/admin/index.html
   - Dependent Packages
-    - Debian system: globus-gridftp-server-progs globus-gridftp-server-dev
+    - Debian system: globus-gridftp-server-progs libglobus-gridftp-server-dev
     - RedHat system: globus-gridftp-server-progs globus-gridftp-server-devel
       - Globus packages are included in EPEL.  EPEL packages can be used by
       - yum install epel-release
