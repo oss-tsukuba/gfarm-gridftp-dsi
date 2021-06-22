@@ -41,9 +41,19 @@ $ globus-url-copy file gsiftp://HOSTNAME/dir/file
 ### ソースコードを使用する場合
 
 ```
-$./configure --libdir=インストール先ライブラリパス
+$ ./configure --libdir=インストール先ライブラリパス
 $ make
 $ sudo make install
+```
+
+Gfarm ライブラリが見つからない場合は、gfarm.pc がインストールされた
+ディレクトリを PKG_CONFIG_PATH 環境変数に指定してから、
+configure を実行します。
+
+実行例
+
+```
+$ PKG_CONFIG_PATH=/usr/local/lib/pkgconfig ./configure --libdir=...
 ```
 
 ### SRPM パッケージを使用する場合
