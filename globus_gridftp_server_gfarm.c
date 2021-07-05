@@ -29,6 +29,7 @@
 #undef PACKAGE_STRING
 #undef PACKAGE_TARNAME
 #undef PACKAGE_VERSION
+#define GFARM_USE_GSSAPI
 #include <gfarm/gfarm.h>
 
 static globus_version_t local_version = {
@@ -55,31 +56,8 @@ typedef struct globus_l_gfs_gfarm_handle_s {
 	char *path;
 } globus_l_gfs_gfarm_handle_t;
 
-/* private function from lib/libgfarm/gfarm/auth.h */
-char *gfarm_gsi_client_cred_name(void);
-
-/* private function from lib/libgfarm/gfarm/auth_gsi.h */
-void gfarm_gsi_set_delegated_cred(gss_cred_id_t);
-
-/* private function from lib/libgfarm/gfarm/config.h */
-gfarm_error_t gfarm_config_local_name_to_string(const char *, char *, size_t);
-
 #define DSI_BLOCKSIZE   "GFARM_DSI_BLOCKSIZE"
 #define DSI_CONCURRENCY "GFARM_DSI_CONCURRENCY"
-
-static int
-gfarm_client_file_bufsize_from_conf() {
-	gfarm_error_t e;
-#define SIZE 64
-	char buf[SIZE];
-
-	e = gfarm_config_local_name_to_string(
-	    "client_file_bufsize", buf, SIZE);
-	if (e != GFARM_ERR_NO_ERROR) {
-		return (-1);
-	}
-	return (atoi(buf));
-}
 
 /*************************************************************************
  *  start
@@ -129,7 +107,7 @@ globus_l_gfs_gfarm_start(
 				"gfarm_initialize",
 				gfarm_error_to_errno(e));
 	}
-	gfarm_gsi_set_delegated_cred(session_info->del_cred);
+	gfarm_gsi_client_cred_set(session_info->del_cred);
 	globus_gfs_log_message(
 		GLOBUS_GFS_LOG_INFO,
 		"[gfarm-dsi] gfarm_gsi_client_cred_name: %s\n",
@@ -599,8 +577,7 @@ buffers_initialize(
 	else
 		gfarm_handle->concurrency = 0;
 	if (gfarm_handle->block_size <= 0) {
-		gfarm_handle->block_size =
-			gfarm_client_file_bufsize_from_conf();
+		gfarm_handle->block_size = gfarm_get_client_file_bufsize();
 		if (gfarm_handle->block_size <= 0) {
 			globus_gridftp_server_get_block_size(
 				op, &gfarm_handle->block_size);
