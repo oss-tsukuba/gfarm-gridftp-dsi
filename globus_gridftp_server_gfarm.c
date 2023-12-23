@@ -486,6 +486,28 @@ gfarm_chmod(globus_gfs_operation_t op, const char *pathname, mode_t mode)
 	return (GLOBUS_SUCCESS);
 }
 
+static globus_result_t
+gfarm_utime(globus_gfs_operation_t op, const char *pathname, time_t modtime)
+{
+	gfarm_error_t e;
+	struct gfarm_timespec gt[2];
+	GlobusGFSName(gfarm_utime);
+
+	/* atime */
+	gt[0].tv_sec = time(NULL);
+	gt[0].tv_nsec = 0;
+	/* mtime */
+	gt[1].tv_sec = modtime;
+	gt[1].tv_nsec = 0;
+	e = gfs_lutimes(pathname, gt);
+	if (e != GFARM_ERR_NO_ERROR) {
+		return (GlobusGFSErrorSystemError("gfs_lutimes",
+		    gfarm_error_to_errno(e)));
+	}
+	uncache(pathname);
+	return (GLOBUS_SUCCESS);
+}
+
 static void
 globus_l_gfs_gfarm_command(
 	globus_gfs_operation_t op,
@@ -514,6 +536,10 @@ globus_l_gfs_gfarm_command(
 	case GLOBUS_GFS_CMD_SITE_CHMOD:
 		result = gfarm_chmod(
 			op, cmd_info->pathname, cmd_info->chmod_mode);
+		break;
+	case GLOBUS_GFS_CMD_SITE_UTIME:  /* MFMT */
+		result = gfarm_utime(
+			op, cmd_info->pathname, cmd_info->utime_time);
 		break;
 	default:
 		result = GLOBUS_FAILURE;
