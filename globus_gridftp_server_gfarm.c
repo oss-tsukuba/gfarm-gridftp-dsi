@@ -59,6 +59,9 @@ typedef struct globus_l_gfs_gfarm_handle_s {
 #define DSI_BLOCKSIZE   "GFARM_DSI_BLOCKSIZE"
 #define DSI_CONCURRENCY "GFARM_DSI_CONCURRENCY"
 
+/* supported digest type, but not all (SEE ALSO: openssl dgst -list) */
+#define CKSM_SUPPORT "MD5:10;SHA1:10;SHA256:11;SHA512:12;"
+
 /*************************************************************************
  *  start
  *  -----
@@ -86,15 +89,19 @@ globus_l_gfs_gfarm_start(
 	gfarm_error_t e;
 	GlobusGFSName(globus_l_gfs_gfarm_start);
 
-	gfarm_handle = (globus_l_gfs_gfarm_handle_t *)
-		globus_malloc(sizeof(globus_l_gfs_gfarm_handle_t));
-
 	memset(&finished_info, '\0', sizeof(globus_gfs_finished_info_t));
 	finished_info.type = GLOBUS_GFS_OP_SESSION_START;
-	finished_info.info.session.session_arg = gfarm_handle;
 	finished_info.info.session.username = session_info->username;
 	finished_info.info.session.home_dir = "/";
 	finished_info.result = GLOBUS_SUCCESS;
+
+	gfarm_handle = (globus_l_gfs_gfarm_handle_t *)
+		globus_malloc(sizeof(globus_l_gfs_gfarm_handle_t));
+	if (gfarm_handle == NULL) {
+		finished_info.result = GlobusGFSErrorMemory("gfarm_handle");
+		goto error;
+	}
+	finished_info.info.session.session_arg = gfarm_handle;
 
 	globus_mutex_init(&gfarm_handle->mutex, NULL);
 	gfarm_handle->buffers_initialized = GLOBUS_FALSE;
@@ -106,6 +113,7 @@ globus_l_gfs_gfarm_start(
 			GlobusGFSErrorSystemError(
 				"gfarm_initialize",
 				gfarm_error_to_errno(e));
+		goto error;
 	}
 	gfarm_gsi_client_cred_set(session_info->del_cred);
 	globus_gfs_log_message(
@@ -113,6 +121,8 @@ globus_l_gfs_gfarm_start(
 		"[gfarm-dsi] gfarm_gsi_client_cred_name: %s\n",
 		gfarm_gsi_client_cred_name());
 
+	globus_gridftp_server_set_checksum_support(op, CKSM_SUPPORT);
+error:
 	globus_gridftp_server_operation_finished(
 		op, finished_info.result, &finished_info);
 }
@@ -508,6 +518,62 @@ gfarm_utime(globus_gfs_operation_t op, const char *pathname, time_t modtime)
 	return (GLOBUS_SUCCESS);
 }
 
+static globus_result_t
+gfarm_cksum(globus_gfs_operation_t op, const char *pathname, const char *alg)
+{
+	struct gfs_stat_cksum c1, c2, *c1p = NULL, *c2p = NULL, *c;
+	GFS_File gf;
+	gfarm_error_t e;
+	int type_mismatch;
+	globus_result_t result = GLOBUS_FAILURE;
+
+	e = gfs_stat_cksum(pathname, &c1);
+	if (e != GFARM_ERR_NO_ERROR) {
+		result = GlobusGFSErrorSystemError("gfs_stat_cksum",
+		    gfarm_error_to_errno(e));
+		goto error;
+	}
+	c1p = &c1;
+	type_mismatch = strcasecmp(c1.type, alg);
+#if 0
+	if (type_mismatch) {
+		result = GlobusGFSErrorGeneric(
+			"gfarm_cksum(digest type mismatch)");
+		goto error;
+	}
+#endif
+	if (c1.len == 0 || type_mismatch) {
+		e = gfs_pio_open(pathname, GFARM_FILE_RDONLY, &gf);
+		if (e != GFARM_ERR_NO_ERROR) {
+			result = GlobusGFSErrorSystemError("gfs_pio_open",
+			    gfarm_error_to_errno(e));
+			goto error;
+		}
+		e = gfs_pio_cksum(gf, alg, &c2);
+		gfs_pio_close(gf);
+		if (e != GFARM_ERR_NO_ERROR) {
+			result = GlobusGFSErrorSystemError("gfs_pio_cksum",
+			   gfarm_error_to_errno(e));
+			goto error;
+		}
+		c2p = &c2;
+		if (c2.len == 0) {
+			result = GlobusGFSErrorGeneric(
+				"gfs_stat_cksum(no checksum)");
+			goto error;
+		}
+		c = &c2;
+	} else {
+		c = &c1;
+	}
+	result = GLOBUS_SUCCESS;
+	globus_gridftp_server_finished_command(op, result, c->cksum);
+error:
+	gfs_stat_cksum_free(c1p);
+	gfs_stat_cksum_free(c2p);
+	return (result);
+}
+
 static void
 globus_l_gfs_gfarm_command(
 	globus_gfs_operation_t op,
@@ -540,6 +606,14 @@ globus_l_gfs_gfarm_command(
 	case GLOBUS_GFS_CMD_SITE_UTIME:  /* MFMT */
 		result = gfarm_utime(
 			op, cmd_info->pathname, cmd_info->utime_time);
+		break;
+	case GLOBUS_GFS_CMD_CKSM:
+		result = gfarm_cksum(op, cmd_info->pathname,
+		    cmd_info->cksm_alg);
+		if (result == GLOBUS_SUCCESS) {
+			return;
+		}
+		/* error */
 		break;
 	default:
 		result = GLOBUS_FAILURE;
