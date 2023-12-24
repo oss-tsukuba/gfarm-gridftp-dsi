@@ -497,6 +497,22 @@ gfarm_chmod(globus_gfs_operation_t op, const char *pathname, mode_t mode)
 }
 
 static globus_result_t
+gfarm_chgrp(globus_gfs_operation_t op, const char *pathname,
+	const char *group)
+{
+	gfarm_error_t e;
+	GlobusGFSName(gfarm_chgrp);
+
+	e = gfs_chown(pathname, NULL, group);
+	if (e != GFARM_ERR_NO_ERROR) {
+		return (GlobusGFSErrorSystemError("gfs_chown(NULL, group)",
+		    gfarm_error_to_errno(e)));
+	}
+	uncache(pathname);
+	return (GLOBUS_SUCCESS);
+}
+
+static globus_result_t
 gfarm_utime(globus_gfs_operation_t op, const char *pathname, time_t modtime)
 {
 	gfarm_error_t e;
@@ -612,6 +628,12 @@ globus_l_gfs_gfarm_command(
 	case GLOBUS_GFS_CMD_DELE:
 		result = gfarm_delete(op, cmd_info->pathname);
 		break;
+	case GLOBUS_GFS_CMD_TRNC:
+		result = GlobusGFSErrorNotImplemented();
+		break;
+	case GLOBUS_GFS_CMD_SITE_RDEL:
+		result = GlobusGFSErrorNotImplemented();
+		break;
 	case GLOBUS_GFS_CMD_RNTO:
 		result = gfarm_rename(
 			op, cmd_info->rnfr_pathname, cmd_info->pathname);
@@ -619,6 +641,10 @@ globus_l_gfs_gfarm_command(
 	case GLOBUS_GFS_CMD_SITE_CHMOD:
 		result = gfarm_chmod(
 			op, cmd_info->pathname, cmd_info->chmod_mode);
+		break;
+	case GLOBUS_GFS_CMD_SITE_CHGRP:
+		result = gfarm_chgrp(
+			op, cmd_info->pathname, cmd_info->chgrp_group);
 		break;
 	case GLOBUS_GFS_CMD_SITE_UTIME:  /* MFMT */
 		result = gfarm_utime(
