@@ -519,6 +519,22 @@ gfarm_utime(globus_gfs_operation_t op, const char *pathname, time_t modtime)
 }
 
 static globus_result_t
+gfarm_symlink(globus_gfs_operation_t op, const char *reference_path,
+	const char *pathname)
+{
+	gfarm_error_t e;
+	GlobusGFSName(gfarm_chmod);
+
+	e = gfs_symlink(reference_path, pathname);
+	if (e != GFARM_ERR_NO_ERROR) {
+		return (GlobusGFSErrorSystemError("gfs_symlink",
+		    gfarm_error_to_errno(e)));
+	}
+	uncache_parent(pathname);
+	return (GLOBUS_SUCCESS);
+}
+
+static globus_result_t
 gfarm_cksum(globus_gfs_operation_t op, const char *pathname, const char *alg)
 {
 	struct gfs_stat_cksum c1, c2, *c1p = NULL, *c2p = NULL, *c;
@@ -526,6 +542,7 @@ gfarm_cksum(globus_gfs_operation_t op, const char *pathname, const char *alg)
 	gfarm_error_t e;
 	int type_mismatch;
 	globus_result_t result = GLOBUS_FAILURE;
+	GlobusGFSName(gfarm_cksum);
 
 	e = gfs_stat_cksum(pathname, &c1);
 	if (e != GFARM_ERR_NO_ERROR) {
@@ -606,6 +623,10 @@ globus_l_gfs_gfarm_command(
 	case GLOBUS_GFS_CMD_SITE_UTIME:  /* MFMT */
 		result = gfarm_utime(
 			op, cmd_info->pathname, cmd_info->utime_time);
+		break;
+	case GLOBUS_GFS_CMD_SITE_SYMLINK:
+		result = gfarm_symlink(
+			op, cmd_info->from_pathname, cmd_info->pathname);
 		break;
 	case GLOBUS_GFS_CMD_CKSM:
 		result = gfarm_cksum(op, cmd_info->pathname,
