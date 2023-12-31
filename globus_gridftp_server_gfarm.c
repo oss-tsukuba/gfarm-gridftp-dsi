@@ -463,6 +463,38 @@ gfarm_delete(globus_gfs_operation_t op, const char *pathname)
 	return (GLOBUS_SUCCESS);
 }
 
+static int
+gfarm_truncate(globus_gfs_operation_t op, const char *pathname,
+	globus_off_t size)
+{
+	gfarm_error_t e, e2;
+	GFS_File gf;
+	int flags = GFARM_FILE_WRONLY;
+
+	if (size == 0)
+		flags |= GFARM_FILE_TRUNC;
+	e = gfs_pio_open(pathname, flags, &gf);
+	if (e != GFARM_ERR_NO_ERROR) {
+		return (GlobusGFSErrorSystemError(
+		    "gfarm_truncate:gfs_pio_open",
+		    gfarm_error_to_errno(e)));
+	}
+	e = gfs_pio_truncate(gf, size);
+	e2 = gfs_pio_close(gf);
+	if (e != GFARM_ERR_NO_ERROR) {
+		return (GlobusGFSErrorSystemError(
+		    "gfarm_truncate:gfs_pio_truncate",
+		    gfarm_error_to_errno(e)));
+	}
+	if (e2 != GFARM_ERR_NO_ERROR) {
+		return (GlobusGFSErrorSystemError(
+		    "gfarm_truncate:gfs_pio_close",
+		    gfarm_error_to_errno(e)));
+	}
+	uncache(pathname);
+	return (GLOBUS_SUCCESS);
+}
+
 static globus_result_t
 gfarm_rename(globus_gfs_operation_t op, const char *from, const char *to)
 {
@@ -629,7 +661,8 @@ globus_l_gfs_gfarm_command(
 		result = gfarm_delete(op, cmd_info->pathname);
 		break;
 	case GLOBUS_GFS_CMD_TRNC:
-		result = GlobusGFSErrorNotImplemented();
+		result = gfarm_truncate(
+			op, cmd_info->pathname, cmd_info->cksm_offset);
 		break;
 	case GLOBUS_GFS_CMD_SITE_RDEL:
 		result = GlobusGFSErrorNotImplemented();
