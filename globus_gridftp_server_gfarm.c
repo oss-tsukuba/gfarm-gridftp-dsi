@@ -463,6 +463,81 @@ gfarm_delete(globus_gfs_operation_t op, const char *pathname)
 	return (GLOBUS_SUCCESS);
 }
 
+static gfarm_error_t
+is_valid_dir(char *file, struct gfs_stat *st, void *arg)
+{
+	const char *f = gfarm_url_dir_skip(file);
+
+	if (f[0] == '.' && (f[1] == '\0' || (f[1] == '.' && f[2] == '\0')))
+		return (GFARM_ERR_INVALID_ARGUMENT);
+	return (GFARM_ERR_NO_ERROR);
+}
+
+static gfarm_error_t
+remove_file(char *file, struct gfs_stat *st, void *arg)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	if (!GFARM_S_ISREG(st->st_mode))
+		return (e);
+
+	e = gfs_unlink(file);
+	if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY ||
+	     e == GFARM_ERR_NO_SUCH_OBJECT)
+		e = GFARM_ERR_NO_ERROR;
+	if (e != GFARM_ERR_NO_ERROR) {
+		globus_gfs_log_message(
+		    GLOBUS_GFS_LOG_ERR,
+		    "gfs_unlink: %s\n",
+		    gfarm_error_string(e));
+	}
+	return (e);
+}
+
+static gfarm_error_t
+remove_dir(char *dir, struct gfs_stat *st, void *arg)
+{
+	gfarm_error_t e = GFARM_ERR_NO_ERROR;
+
+	e = gfs_rmdir(dir);
+	if (e == GFARM_ERR_NO_SUCH_FILE_OR_DIRECTORY)
+		e = GFARM_ERR_NO_ERROR;
+	if (e != GFARM_ERR_NO_ERROR) {
+		globus_gfs_log_message(
+		    GLOBUS_GFS_LOG_ERR,
+		    "gfs_rmdir: %s\n",
+		    gfarm_error_string(e));
+	}
+	return (e);
+}
+
+/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+extern gfarm_error_t
+gfarm_foreach_directory_hierarchy(
+	gfarm_error_t (*op_file)(char *, struct gfs_stat *, void *),
+	gfarm_error_t (*op_dir1)(char *, struct gfs_stat *, void *),
+	gfarm_error_t (*op_dir2)(char *, struct gfs_stat *, void *),
+	char *file, void *arg);
+
+static globus_result_t
+gfarm_delete_recursive(globus_gfs_operation_t op, const char *pathname)
+{
+	gfarm_error_t e;
+	GlobusGFSName(gfarm_delete_recursive);
+
+	/* XXX FIXME: INTERNAL FUNCTION SHOULD NOT BE USED */
+	e = gfarm_foreach_directory_hierarchy(remove_file,
+	    is_valid_dir, remove_dir, (char *)pathname /* UNCONST */, NULL);
+	if (e != GFARM_ERR_NO_ERROR) {
+		return (GlobusGFSErrorSystemError(
+		    "gfarm_delete_recursive:gfarm_foreach_directory_hierarchy",
+		    gfarm_error_to_errno(e)));
+	}
+	uncache(pathname);
+	uncache_parent(pathname);
+	return (GLOBUS_SUCCESS);
+}
+
 static int
 gfarm_truncate(globus_gfs_operation_t op, const char *pathname,
 	globus_off_t size)
@@ -665,7 +740,7 @@ globus_l_gfs_gfarm_command(
 			op, cmd_info->pathname, cmd_info->cksm_offset);
 		break;
 	case GLOBUS_GFS_CMD_SITE_RDEL:
-		result = GlobusGFSErrorNotImplemented();
+		result = gfarm_delete_recursive(op, cmd_info->pathname);
 		break;
 	case GLOBUS_GFS_CMD_RNTO:
 		result = gfarm_rename(
