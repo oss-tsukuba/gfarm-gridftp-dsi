@@ -21,10 +21,10 @@ server (globus-gridftp-server).
 
 GridFTP server
 
-```bash
-### (Preparation) Install Gfarm packages and configure Gfarm client.
-### (Preparation) Set up GSI environment for GridFTP server. (CA, Certificate, grid-mapfile)
+- (Preparation) Install Gfarm packages and configure Gfarm client.
+- (Preparation) Set up GSI environment for GridFTP server. (CA, Certificate, grid-mapfile)
 
+```bash
 ./configure --libdir=$(pkg-config --variable=libdir globus-gridftp-server)
 make
 sudo make install
@@ -33,9 +33,10 @@ sudo globus-gridftp-server -dsi gfarm
 
 GridFTP client
 
-```bash
-### (Preparation) Set up GSI environment for GridFTP client. (CA, Certificate)
+- (Preparation) Install GridFTP clients.
+- (Preparation) Set up GSI environment for GridFTP client. (CA, Certificate)
 
+```bash
 globus-proxy-init
 globus-url-copy file gsiftp://HOSTNAME/dir/file
 ```
@@ -146,7 +147,8 @@ Please refer to the following for examples of GridFTP clients.
 
 ## Supported feature
 
-- upload, download
+- get (download)
+- put (upload)
 - mkdir
 - rmdir
 - rename (`uberftp -rename`)
