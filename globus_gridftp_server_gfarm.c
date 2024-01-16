@@ -463,6 +463,7 @@ gfarm_delete(globus_gfs_operation_t op, const char *pathname)
 	return (GLOBUS_SUCCESS);
 }
 
+#ifdef USE_GLOBUS_GFS_CMD_SITE_RDEL
 static gfarm_error_t
 is_valid_dir(char *file, struct gfs_stat *st, void *arg)
 {
@@ -538,6 +539,9 @@ gfarm_delete_recursive(globus_gfs_operation_t op, const char *pathname)
 	return (GLOBUS_SUCCESS);
 }
 
+#endif  /* USE_GLOBUS_GFS_CMD_SITE_RDEL */
+
+#ifdef USE_GLOBUS_GFS_CMD_TRNC
 static int
 gfarm_truncate(globus_gfs_operation_t op, const char *pathname,
 	globus_off_t size)
@@ -569,6 +573,7 @@ gfarm_truncate(globus_gfs_operation_t op, const char *pathname,
 	uncache(pathname);
 	return (GLOBUS_SUCCESS);
 }
+#endif  /* USE_GLOBUS_GFS_CMD_TRNC */
 
 static globus_result_t
 gfarm_rename(globus_gfs_operation_t op, const char *from, const char *to)
@@ -736,11 +741,21 @@ globus_l_gfs_gfarm_command(
 		result = gfarm_delete(op, cmd_info->pathname);
 		break;
 	case GLOBUS_GFS_CMD_TRNC:
+#ifdef USE_GLOBUS_GFS_CMD_TRNC  /* XXX not tested */
+#warning "GLOBUS_GFS_CMD_TRNC is enabled"
 		result = gfarm_truncate(
 			op, cmd_info->pathname, cmd_info->cksm_offset);
+#else
+		result = GlobusGFSErrorNotImplemented();
+#endif
 		break;
 	case GLOBUS_GFS_CMD_SITE_RDEL:
+#ifdef USE_GLOBUS_GFS_CMD_SITE_RDEL  /* XXX not tested */
+#warning "GLOBUS_GFS_CMD_SITE_RDEL is enabled"
 		result = gfarm_delete_recursive(op, cmd_info->pathname);
+#else
+		result = GlobusGFSErrorNotImplemented();
+#endif
 		break;
 	case GLOBUS_GFS_CMD_RNTO:
 		result = gfarm_rename(
