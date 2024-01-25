@@ -1,3 +1,12 @@
+Release note for Gfarm GridFTP DSI 1.1.0
+========================================
+
+[2024.1.25]
+
+Updated feature
+* support MFMT (UTIME), CKSM, SYMLINK, CHGRP
+* experimental support TRNK and RDEL
+
 Release note for Gfarm GridFTP DSI 1.0.5
 ========================================
 
