@@ -18,6 +18,16 @@ AC_SUBST([PATCH_VERSION], [${PACKAGE_VERSION##*.}])
 BUILD_TIMESTAMP=`date +%s 2>/dev/null || echo 0`
 AC_SUBST([BUILD_TIMESTAMP], [$BUILD_TIMESTAMP])
 
+BRANCH_NAME=`(git rev-parse --abbrev-ref HEAD 2>/dev/null) || echo unknown`
+BRANCH_ID=`$AWK -v b="$BRANCH_NAME" '
+  BEGIN { id=0 }
+  /^[ \t]*($|#)/ { next }
+  NF>=2 && $1==b { id=$2; exit }
+  END { print id }
+' "$srcdir/branch.def" 2>/dev/null`
+AC_SUBST([BRANCH_ID],   [$BRANCH_ID])
+AC_SUBST([BRANCH_ID], [$BRANCH_ID])
+
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC

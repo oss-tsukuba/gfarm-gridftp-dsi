@@ -37,7 +37,7 @@ static globus_version_t local_version = {
 	MAJOR_VERSION, /* major version number */
 	MINOR_VERSION, /* minor version number */
 	BUILD_TIMESTAMP,
-	0 /* branch ID */
+	BRANCH_ID /* branch ID */
 };
 // static globus_version_t local_version = {
 // 	1, /* major version number */
