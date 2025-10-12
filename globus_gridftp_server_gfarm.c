@@ -20,6 +20,7 @@
 
 #include "config.h"
 #include "globus_gridftp_server.h"
+#include "version.h"
 
 #include <libgen.h>
 #include <pwd.h>
@@ -33,11 +34,17 @@
 #include <gfarm/gfarm.h>
 
 static globus_version_t local_version = {
-	1, /* major version number */
-	0, /* minor version number */
-	1236013521,
+	MAJOR_VERSION, /* major version number */
+	MINOR_VERSION, /* minor version number */
+	BUILD_TIMESTAMP,
 	0 /* branch ID */
 };
+// static globus_version_t local_version = {
+// 	1, /* major version number */
+// 	0, /* minor version number */
+// 	1236013521,
+// 	0 /* branch ID */
+// };
 
 typedef struct globus_l_gfs_gfarm_handle_s {
 	int concurrency;

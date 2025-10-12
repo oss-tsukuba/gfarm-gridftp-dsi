@@ -10,6 +10,14 @@ AC_CONFIG_HEADER([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
+rest=${PACKAGE_VERSION#*.}
+minor=${rest%%.*}
+AC_SUBST([MAJOR_VERSION], [${PACKAGE_VERSION%%.*}])
+AC_SUBST([MINOR_VERSION], [$minor])
+AC_SUBST([PATCH_VERSION], [${PACKAGE_VERSION##*.}])
+BUILD_TIMESTAMP=`date +%s 2>/dev/null || echo 0`
+AC_SUBST([BUILD_TIMESTAMP], [$BUILD_TIMESTAMP])
+
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
@@ -42,5 +50,8 @@ AC_TYPE_UID_T
 AC_HEADER_STDC
 AC_CHECK_FUNCS([memset strdup])
 
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([
+  Makefile
+  version.h
+])
 AC_OUTPUT
