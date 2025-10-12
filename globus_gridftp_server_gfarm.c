@@ -69,6 +69,10 @@ typedef struct globus_l_gfs_gfarm_handle_s {
 /* supported digest type, but not all (SEE ALSO: openssl dgst -list) */
 #define CKSM_SUPPORT "MD5:10;SHA1:10;SHA256:11;SHA512:12;"
 
+#define GFS_STAT_COUNT_CHECK 100
+#define GFS_STAT_COUNT_MAX 1000
+#define GFS_STAT_TIME 10
+
 /*************************************************************************
  *  start
  *  -----
@@ -268,6 +272,8 @@ globus_l_gfs_gfarm_stat(
 {
 	globus_gfs_stat_t  *stat_array = NULL;
 	int stat_count = 0;
+	int stat_limit_check = GFS_STAT_COUNT_CHECK;
+	int stat_limit_time = 0;
 	/* globus_l_gfs_gfarm_handle_t *gfarm_handle */
 	globus_result_t result;
 	gfarm_error_t e;
@@ -279,6 +285,8 @@ globus_l_gfs_gfarm_stat(
 	gfarm_error_t e2;
 	int array_size = 4;
 	GlobusGFSName(globus_l_gfs_gfarm_stat);
+
+	stat_limit_time = time(NULL) + GFS_STAT_TIME;
 
 	/* gfarm_handle = (globus_l_gfs_gfarm_handle_t *) user_arg; */
 	path = stat_info->pathname;
@@ -357,6 +365,21 @@ globus_l_gfs_gfarm_stat(
 				"gfs_stat",
 				gfarm_error_to_errno(e));
 			goto error;
+		}
+
+		if (stat_count >= stat_limit_check){
+			time_t tmp_time;
+			tmp_time = time(NULL);
+			if (tmp_time >= stat_limit_time || stat_count >= GFS_STAT_COUNT_MAX) {
+				globus_gridftp_server_finished_stat_partial(
+					op, GLOBUS_SUCCESS, stat_array, stat_count);
+				stat_array_destroy(stat_array, stat_count);
+				stat_array = NULL;
+				stat_count = 0;
+				array_size = 4;
+				stat_limit_time = tmp_time + GFS_STAT_TIME;
+			}
+			stat_limit_check = stat_count + GFS_STAT_COUNT_CHECK;
 		}
 	}
 	e2 = gfs_closedir(dp);
