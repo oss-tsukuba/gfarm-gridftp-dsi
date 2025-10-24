@@ -61,6 +61,7 @@ typedef struct globus_l_gfs_gfarm_handle_s {
 	globus_off_t read_len;  /* not use */
 	globus_result_t save_result;
 	char *path;
+	time_t utime;
 } globus_l_gfs_gfarm_handle_t;
 
 #define DSI_BLOCKSIZE   "GFARM_DSI_BLOCKSIZE"
@@ -986,6 +987,16 @@ finish:
 		    gfarm_handle->save_result == GLOBUS_SUCCESS)
 			gfarm_handle->save_result = GlobusGFSErrorSystemError(
 			    "gfs_pio_close", gfarm_error_to_errno(e));
+
+		if (gfarm_handle->utime >= 0) {
+			e = gfarm_utime(op, gfarm_handle->path, gfarm_handle->utime);
+			if (e != GFARM_ERR_NO_ERROR &&
+		    gfarm_handle->save_result == GLOBUS_SUCCESS)
+			gfarm_handle->save_result = GlobusGFSErrorSystemError(
+			    "gfarm_utime", 
+				gfarm_error_to_errno(e));
+		}
+
 		uncache(gfarm_handle->path);
 		globus_gridftp_server_finished_transfer(
 			op, gfarm_handle->save_result);
@@ -1014,6 +1025,14 @@ globus_l_gfs_gfarm_recv(
 	gfarm_handle->offset = 0;
 	gfarm_handle->save_result = GLOBUS_SUCCESS;
 	gfarm_handle->path = transfer_info->pathname;
+
+	result = globus_gridftp_server_get_recv_modification_time(op, &gfarm_handle->utime);
+	if (result != GLOBUS_SUCCESS) {
+		result = GlobusGFSErrorWrapFailed(
+            "globus_gridftp_server_get_recv_modification_time", result);
+		globus_gridftp_server_finished_transfer(op, result);
+		return;
+	}
 
 	um = umask(0022);
 	umask(um);
