@@ -46,6 +46,17 @@ static globus_version_t local_version = {
 // 	0 /* branch ID */
 // };
 
+/* !!! INTERNAL FUNCTION !!! */
+// lib/libgfarm/gfarm/gfm_client.h
+struct gfm_connection;
+typedef struct gfm_connection gfm_connection_t;
+extern void gfm_client_connection_free(gfm_connection_t *);
+// lib/libgfarm/gfarm/lookup.h
+extern gfarm_error_t gfm_client_connection_and_process_acquire_by_path(const char *, gfm_connection_t **);
+// lib/libgfarm/gfarm/config.h
+extern gfarm_error_t gfm_client_config_name_to_string(struct gfm_connection *, const char *, char *, size_t);
+/* ------------------------- */
+
 typedef struct globus_l_gfs_gfarm_handle_s {
 	int concurrency;
 	globus_size_t block_size;
@@ -99,6 +110,14 @@ globus_l_gfs_gfarm_start(
 	globus_l_gfs_gfarm_handle_t *gfarm_handle;
 	globus_gfs_finished_info_t finished_info;
 	gfarm_error_t e;
+
+	// to get checksum algorithm name
+	gfm_connection_t *gfm_server = NULL;
+	const char *path = ".";
+	const char *config_name = "digest";
+	size_t bufsize = 2048;
+	char *buffer = NULL;
+
 	GlobusGFSName(globus_l_gfs_gfarm_start);
 
 	memset(&finished_info, '\0', sizeof(globus_gfs_finished_info_t));
@@ -133,8 +152,41 @@ globus_l_gfs_gfarm_start(
 		"[gfarm-dsi] gfarm_gsi_client_cred_name: %s\n",
 		gfarm_gsi_client_cred_name());
 
-	globus_gridftp_server_set_checksum_support(op, CKSM_SUPPORT);
+	// Get checksum algorithm name ("digest") from gfmd
+	e = gfm_client_connection_and_process_acquire_by_path(path, &gfm_server);
+	if (e != GFARM_ERR_NO_ERROR) {
+		finished_info.result =
+			GlobusGFSErrorSystemError(
+				"gfm_client_connection_and_process_acquire_by_path",
+				gfarm_error_to_errno(e));
+		goto error;
+	}
+	buffer = malloc(bufsize);
+	if (buffer == NULL) {
+		finished_info.result = GlobusGFSErrorMemory("buffer");
+		goto error;
+	}
+	e = gfm_client_config_name_to_string(gfm_server, config_name, buffer, bufsize);
+	if (e != GFARM_ERR_NO_ERROR) {
+		finished_info.result =
+			GlobusGFSErrorSystemError(
+				"gfm_client_config_name_to_string",
+				gfarm_error_to_errno(e));
+		goto error;
+	}
+	char cksm[64];
+	int n = snprintf(cksm, sizeof cksm, "%s:%d", buffer, 10);
+	if (n < 0 || n >= (int)sizeof cksm) {
+		finished_info.result = GlobusGFSErrorGeneric(
+				"Failed to get checksum algorithm name");
+		goto error;
+	}
+	globus_gridftp_server_set_checksum_support(op, cksm);
+	// globus_gridftp_server_set_checksum_support(op, CKSM_SUPPORT);
+
 error:
+	if (gfm_server) gfm_client_connection_free(gfm_server);
+	if (buffer) free(buffer);
 	globus_gridftp_server_operation_finished(
 		op, finished_info.result, &finished_info);
 }
