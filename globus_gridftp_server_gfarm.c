@@ -763,7 +763,7 @@ gfarm_cksum(globus_gfs_operation_t op, const char *pathname, const char *alg)
 	}
 	c1p = &c1;
 	type_mismatch = strcasecmp(c1.type, alg);
-#if 0
+#if 1
 	if (type_mismatch) {
 		result = GlobusGFSErrorGeneric(
 			"gfarm_cksum(digest type mismatch)");
