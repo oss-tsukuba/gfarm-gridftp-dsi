@@ -175,7 +175,7 @@ globus_l_gfs_gfarm_start(
 		goto error;
 	}
 	char cksm[64];
-	int n = snprintf(cksm, sizeof cksm, "%s:%d", buffer, 10);
+	int n = snprintf(cksm, sizeof cksm, "%s:%d;", buffer, 10);
 	if (n < 0 || n >= (int)sizeof cksm) {
 		finished_info.result = GlobusGFSErrorGeneric(
 				"Failed to get checksum algorithm name");
