@@ -21,7 +21,7 @@
 #include "config.h"
 #include "globus_gridftp_server.h"
 #include "version.h"
-#include "gfm_client.h"
+#include "gfm_client_internal.h"
 
 #include <libgen.h>
 #include <pwd.h>
