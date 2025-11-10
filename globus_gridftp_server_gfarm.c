@@ -314,7 +314,7 @@ globus_l_gfs_gfarm_stat(
 	globus_gfs_stat_t  *stat_array = NULL;
 	int stat_count = 0;
 	int stat_limit_check = GFS_STAT_COUNT_CHECK;
-	int stat_limit_time = 0;
+	time_t stat_limit_time = 0;
 	/* globus_l_gfs_gfarm_handle_t *gfarm_handle */
 	globus_result_t result;
 	gfarm_error_t e;
