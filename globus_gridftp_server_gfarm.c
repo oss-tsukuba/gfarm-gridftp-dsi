@@ -26,6 +26,7 @@
 #include <libgen.h>
 #include <pwd.h>
 #include <grp.h>
+#include <ctype.h>
 
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
@@ -68,6 +69,17 @@ typedef struct globus_l_gfs_gfarm_handle_s {
 #define GFS_STAT_COUNT_CHECK 100
 #define GFS_STAT_COUNT_MAX 1000
 #define GFS_STAT_TIME 10
+
+static void str_upper_inplace(char *s)
+{
+	if (!s)
+		return;
+
+	while (*s) {
+		*s = (char)toupper((unsigned char)*s);
+		s++;
+	}
+}
 
 /*************************************************************************
  *  start
@@ -160,6 +172,7 @@ globus_l_gfs_gfarm_start(
 				gfarm_error_to_errno(e));
 		goto error;
 	}
+	str_upper_inplace(buffer);
 	char cksm[64];
 	int n = snprintf(cksm, sizeof cksm, "%s:%d;", buffer, 10);
 	if (n < 0 || n >= (int)sizeof cksm) {
