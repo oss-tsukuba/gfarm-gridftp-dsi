@@ -57,14 +57,11 @@ typedef struct globus_l_gfs_gfarm_handle_s {
 	globus_off_t read_len;  /* not use */
 	globus_result_t save_result;
 	char *path;
-	time_t utime;
+	time_t mtime;
 } globus_l_gfs_gfarm_handle_t;
 
 #define DSI_BLOCKSIZE   "GFARM_DSI_BLOCKSIZE"
 #define DSI_CONCURRENCY "GFARM_DSI_CONCURRENCY"
-
-/* supported digest type, but not all (SEE ALSO: openssl dgst -list) */
-#define CKSM_SUPPORT "MD5:10;SHA1:10;SHA256:11;SHA512:12;"
 
 #define GFS_STAT_COUNT_CHECK 100
 #define GFS_STAT_COUNT_MAX 1000
@@ -113,6 +110,9 @@ globus_l_gfs_gfarm_start(
 	const char *config_name = "digest";
 	size_t bufsize = 2048;
 	char *buffer = NULL;
+	char cksm[64];
+	int cksm_len = 0;
+	int priority = 10;
 
 	GlobusGFSName(globus_l_gfs_gfarm_start);
 
@@ -173,15 +173,14 @@ globus_l_gfs_gfarm_start(
 		goto error;
 	}
 	str_upper_inplace(buffer);
-	char cksm[64];
-	int n = snprintf(cksm, sizeof cksm, "%s:%d;", buffer, 10);
-	if (n < 0 || n >= (int)sizeof cksm) {
+	/* Append one checksum entry in the format "ALGO:PRIORITY;" */
+	cksm_len = snprintf(cksm, sizeof cksm, "%s:%d;", buffer, priority);
+	if (cksm_len < 0 || cksm_len >= (int)sizeof cksm) {
 		finished_info.result = GlobusGFSErrorGeneric(
 				"Failed to get checksum algorithm name");
 		goto error;
 	}
 	globus_gridftp_server_set_checksum_support(op, cksm);
-	/* globus_gridftp_server_set_checksum_support(op, CKSM_SUPPORT); */
 
 error:
 	if (gfm_server)
@@ -387,6 +386,7 @@ globus_l_gfs_gfarm_stat(
 	while ((e = gfs_readdir(dp, &de)) == GFARM_ERR_NO_ERROR &&
 	       de != NULL) {
 		char child[MAXPATHLEN];
+
 		stat_count++;
 		if (stat_array == NULL) {
 			stat_array = (globus_gfs_stat_t *)
@@ -423,6 +423,7 @@ globus_l_gfs_gfarm_stat(
 
 		if (stat_count >= stat_limit_check) {
 			time_t tmp_time;
+
 			tmp_time = time(NULL);
 			if (tmp_time >= stat_limit_time ||
 				stat_count >= GFS_STAT_COUNT_MAX) {
@@ -1042,9 +1043,9 @@ finish:
 			gfarm_handle->save_result = GlobusGFSErrorSystemError(
 			    "gfs_pio_close", gfarm_error_to_errno(e));
 
-		if (gfarm_handle->utime >= 0) {
+		if (gfarm_handle->mtime >= 0) {
 			e = gfarm_utime(
-				op, gfarm_handle->path, gfarm_handle->utime);
+				op, gfarm_handle->path, gfarm_handle->mtime);
 			if (e != GFARM_ERR_NO_ERROR &&
 				gfarm_handle->save_result == GLOBUS_SUCCESS) {
 				gfarm_handle->save_result =
@@ -1084,7 +1085,7 @@ globus_l_gfs_gfarm_recv(
 	gfarm_handle->path = transfer_info->pathname;
 
 	result = globus_gridftp_server_get_recv_modification_time(
-		op, &gfarm_handle->utime);
+		op, &gfarm_handle->mtime);
 	if (result != GLOBUS_SUCCESS) {
 		result = GlobusGFSErrorWrapFailed(
 			"globus_gridftp_server_get_recv_modification_time",
