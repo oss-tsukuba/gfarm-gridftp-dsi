@@ -158,7 +158,7 @@ globus_l_gfs_gfarm_start(
 		gfarm_error_to_errno(e));
 		goto error;
 	}
-	buffer = malloc(bufsize);
+	buffer = globus_malloc(bufsize);
 	if (buffer == NULL) {
 		finished_info.result = GlobusGFSErrorMemory("buffer");
 		goto error;
