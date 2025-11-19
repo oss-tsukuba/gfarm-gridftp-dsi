@@ -20,10 +20,13 @@
 
 #include "config.h"
 #include "globus_gridftp_server.h"
+#include "version.h"
+#include "gfm_client_internal.h"
 
 #include <libgen.h>
 #include <pwd.h>
 #include <grp.h>
+#include <ctype.h>
 
 #undef PACKAGE_NAME
 #undef PACKAGE_STRING
@@ -33,10 +36,10 @@
 #include <gfarm/gfarm.h>
 
 static globus_version_t local_version = {
-	1, /* major version number */
-	0, /* minor version number */
-	1236013521,
-	0 /* branch ID */
+	MAJOR_VERSION, /* major version number */
+	MINOR_VERSION, /* minor version number */
+	BUILD_TIMESTAMP,
+	BRANCH_ID /* branch ID */
 };
 
 typedef struct globus_l_gfs_gfarm_handle_s {
@@ -54,13 +57,26 @@ typedef struct globus_l_gfs_gfarm_handle_s {
 	globus_off_t read_len;  /* not use */
 	globus_result_t save_result;
 	char *path;
+	time_t mtime;
 } globus_l_gfs_gfarm_handle_t;
 
 #define DSI_BLOCKSIZE   "GFARM_DSI_BLOCKSIZE"
 #define DSI_CONCURRENCY "GFARM_DSI_CONCURRENCY"
 
-/* supported digest type, but not all (SEE ALSO: openssl dgst -list) */
-#define CKSM_SUPPORT "MD5:10;SHA1:10;SHA256:11;SHA512:12;"
+#define GFS_STAT_COUNT_CHECK 100
+#define GFS_STAT_COUNT_MAX 1000
+#define GFS_STAT_TIME 10
+
+static void str_upper_inplace(char *s)
+{
+	if (!s)
+		return;
+
+	while (*s) {
+		*s = (char)toupper((unsigned char)*s);
+		s++;
+	}
+}
 
 /*************************************************************************
  *  start
@@ -87,6 +103,17 @@ globus_l_gfs_gfarm_start(
 	globus_l_gfs_gfarm_handle_t *gfarm_handle;
 	globus_gfs_finished_info_t finished_info;
 	gfarm_error_t e;
+
+	/* to get checksum algorithm name */
+	struct gfm_connection *gfm_server = NULL;
+	const char *path = ".";
+	const char *config_name = "digest";
+	size_t bufsize = 2048;
+	char *buffer = NULL;
+	char cksm[64];
+	int cksm_len = 0;
+	int priority = 10;
+
 	GlobusGFSName(globus_l_gfs_gfarm_start);
 
 	memset(&finished_info, '\0', sizeof(globus_gfs_finished_info_t));
@@ -121,8 +148,45 @@ globus_l_gfs_gfarm_start(
 		"[gfarm-dsi] gfarm_gsi_client_cred_name: %s\n",
 		gfarm_gsi_client_cred_name());
 
-	globus_gridftp_server_set_checksum_support(op, CKSM_SUPPORT);
+	/* Get checksum algorithm name ("digest") from gfmd */
+	e = gfm_client_connection_and_process_acquire_by_path(
+		path, &gfm_server);
+	if (e != GFARM_ERR_NO_ERROR) {
+		finished_info.result =
+			GlobusGFSErrorSystemError(
+		"gfm_client_connection_and_process_acquire_by_path",
+		gfarm_error_to_errno(e));
+		goto error;
+	}
+	buffer = globus_malloc(bufsize);
+	if (buffer == NULL) {
+		finished_info.result = GlobusGFSErrorMemory("buffer");
+		goto error;
+	}
+	e = gfm_client_config_name_to_string(
+		gfm_server, config_name, buffer, bufsize);
+	if (e != GFARM_ERR_NO_ERROR) {
+		finished_info.result =
+			GlobusGFSErrorSystemError(
+				"gfm_client_config_name_to_string",
+				gfarm_error_to_errno(e));
+		goto error;
+	}
+	str_upper_inplace(buffer);
+	/* Append one checksum entry in the format "ALGO:PRIORITY;" */
+	cksm_len = snprintf(cksm, sizeof cksm, "%s:%d;", buffer, priority);
+	if (cksm_len < 0 || cksm_len >= (int)sizeof cksm) {
+		finished_info.result = GlobusGFSErrorGeneric(
+				"Failed to get checksum algorithm name");
+		goto error;
+	}
+	globus_gridftp_server_set_checksum_support(op, cksm);
+
 error:
+	if (gfm_server)
+		gfm_client_connection_free(gfm_server);
+	if (buffer)
+		free(buffer);
 	globus_gridftp_server_operation_finished(
 		op, finished_info.result, &finished_info);
 }
@@ -261,6 +325,8 @@ globus_l_gfs_gfarm_stat(
 {
 	globus_gfs_stat_t  *stat_array = NULL;
 	int stat_count = 0;
+	int stat_limit_check = GFS_STAT_COUNT_CHECK;
+	time_t stat_limit_time = 0;
 	/* globus_l_gfs_gfarm_handle_t *gfarm_handle */
 	globus_result_t result;
 	gfarm_error_t e;
@@ -272,6 +338,8 @@ globus_l_gfs_gfarm_stat(
 	gfarm_error_t e2;
 	int array_size = 4;
 	GlobusGFSName(globus_l_gfs_gfarm_stat);
+
+	stat_limit_time = time(NULL) + GFS_STAT_TIME;
 
 	/* gfarm_handle = (globus_l_gfs_gfarm_handle_t *) user_arg; */
 	path = stat_info->pathname;
@@ -318,6 +386,7 @@ globus_l_gfs_gfarm_stat(
 	while ((e = gfs_readdir(dp, &de)) == GFARM_ERR_NO_ERROR &&
 	       de != NULL) {
 		char child[MAXPATHLEN];
+
 		stat_count++;
 		if (stat_array == NULL) {
 			stat_array = (globus_gfs_stat_t *)
@@ -350,6 +419,23 @@ globus_l_gfs_gfarm_stat(
 				"gfs_stat",
 				gfarm_error_to_errno(e));
 			goto error;
+		}
+
+		if (stat_count >= stat_limit_check) {
+			time_t tmp_time;
+
+			tmp_time = time(NULL);
+			if (tmp_time >= stat_limit_time ||
+				stat_count >= GFS_STAT_COUNT_MAX) {
+				globus_gridftp_server_finished_stat_partial(
+				op, GLOBUS_SUCCESS, stat_array, stat_count);
+				stat_array_destroy(stat_array, stat_count);
+				stat_array = NULL;
+				stat_count = 0;
+				array_size = 4;
+				stat_limit_time = tmp_time + GFS_STAT_TIME;
+			}
+			stat_limit_check = stat_count + GFS_STAT_COUNT_CHECK;
 		}
 	}
 	e2 = gfs_closedir(dp);
@@ -680,7 +766,7 @@ gfarm_cksum(globus_gfs_operation_t op, const char *pathname, const char *alg)
 	}
 	c1p = &c1;
 	type_mismatch = strcasecmp(c1.type, alg);
-#if 0
+#if 1
 	if (type_mismatch) {
 		result = GlobusGFSErrorGeneric(
 			"gfarm_cksum(digest type mismatch)");
@@ -956,6 +1042,19 @@ finish:
 		    gfarm_handle->save_result == GLOBUS_SUCCESS)
 			gfarm_handle->save_result = GlobusGFSErrorSystemError(
 			    "gfs_pio_close", gfarm_error_to_errno(e));
+
+		if (gfarm_handle->mtime >= 0) {
+			e = gfarm_utime(
+				op, gfarm_handle->path, gfarm_handle->mtime);
+			if (e != GFARM_ERR_NO_ERROR &&
+				gfarm_handle->save_result == GLOBUS_SUCCESS) {
+				gfarm_handle->save_result =
+					GlobusGFSErrorSystemError(
+						"gfarm_utime",
+						gfarm_error_to_errno(e));
+			}
+		}
+
 		uncache(gfarm_handle->path);
 		globus_gridftp_server_finished_transfer(
 			op, gfarm_handle->save_result);
@@ -984,6 +1083,16 @@ globus_l_gfs_gfarm_recv(
 	gfarm_handle->offset = 0;
 	gfarm_handle->save_result = GLOBUS_SUCCESS;
 	gfarm_handle->path = transfer_info->pathname;
+
+	result = globus_gridftp_server_get_recv_modification_time(
+		op, &gfarm_handle->mtime);
+	if (result != GLOBUS_SUCCESS) {
+		result = GlobusGFSErrorWrapFailed(
+			"globus_gridftp_server_get_recv_modification_time",
+			result);
+		globus_gridftp_server_finished_transfer(op, result);
+		return;
+	}
 
 	um = umask(0022);
 	umask(um);

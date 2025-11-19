@@ -11,3 +11,6 @@ globus_gridftp_server_gfarm.o
 libglobus_gridftp_server_gfarm.la
 .libs/
 .deps/
+version.h
+gfarm-gridftp-dsi-*
+.vscode

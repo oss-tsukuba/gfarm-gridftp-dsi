@@ -141,8 +141,9 @@ Please refer to the following for examples of GridFTP clients.
 - when using `-verify-checksum` option
   - Specify the same algorithm as checksum (digest) enabled in Gfarm.
   - example: ```-checksum-alg `gfstatus -M digest` ```
-  - When different algorithm is specified, there is a possibility of increased processing time.
-  - Because if the checksum algorithm stored on gfmd differs from the specified algorithm, the checksum is calculated and obtained on gfsd before comparison.
+  - When a different algorithm is specified, an error will be returned.
+  - If the algorithm in Gfarm is changed during operation, the checksum type stored in existing file metadata will differ from the new configuration, which causes a checksum mismatch error, even if the same algorithm is specified.
+    - To resolve this issue, recalculate and update the checksum values of existing files in Gfarm after changing the algorithm.
 - Modification time is not kept.  use `uberftp` instead.
 
 ## Supported feature
