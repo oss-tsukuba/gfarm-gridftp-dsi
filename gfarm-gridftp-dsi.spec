@@ -1,6 +1,6 @@
 Summary: Gfarm GridFTP DSI
 Name: gfarm-gridftp-dsi
-Version: 1.1.0
+Version: 1.2.0
 Release: 1%{?dist}
 License: BSD
 Group: Applications/Internet

@@ -1,3 +1,14 @@
+Release note for Gfarm GridFTP DSI 1.2.0
+========================================
+
+[2026.3.3]
+
+Updated feature
+* set package major and minor version
+* return partial stat responses
+* support modification time on recv
+* return valid digest only for CKSUM_SUPPORT
+
 Release note for Gfarm GridFTP DSI 1.1.0
 ========================================
 
