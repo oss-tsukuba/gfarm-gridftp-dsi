@@ -1,12 +1,12 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
-AC_PREREQ(2.59)
-AC_INIT([gfarm-gridftp-dsi], [1.2.0])
+AC_PREREQ([2.71])
+AC_INIT([gfarm-gridftp-dsi],[1.2.0])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([globus_gridftp_server_gfarm.c])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_MACRO_DIR([m4])
 m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
@@ -35,7 +35,7 @@ AC_PROG_CPP
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AC_PROG_LIBTOOL
+LT_INIT
 
 # Checks for Gfarm.
 PKG_CHECK_MODULES([GFARM], [gfarm >= 2.4.2])
@@ -57,7 +57,6 @@ AC_TYPE_MODE_T
 AC_TYPE_UID_T
 
 # Checks for library functions.
-AC_HEADER_STDC
 AC_CHECK_FUNCS([memset strdup])
 
 AC_CONFIG_FILES([
