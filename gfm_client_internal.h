@@ -1,8 +1,6 @@
 #ifndef GFM_CLIENT_INTERNAL_H
 #define GFM_CLIENT_INTERNAL_H
 
-#include <gfarm/gfarm.h>
-
 /* !!! INTERNAL FUNCTION !!! */
 /* lib/libgfarm/gfarm/gfm_client.h */
 struct gfm_connection;

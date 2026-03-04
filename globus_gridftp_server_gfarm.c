@@ -21,7 +21,6 @@
 #include "config.h"
 #include "globus_gridftp_server.h"
 #include "version.h"
-#include "gfm_client_internal.h"
 
 #include <libgen.h>
 #include <pwd.h>
@@ -34,6 +33,8 @@
 #undef PACKAGE_VERSION
 #define GFARM_USE_GSSAPI
 #include <gfarm/gfarm.h>
+
+#include "gfm_client_internal.h"
 
 static globus_version_t local_version = {
 	MAJOR_VERSION, /* major version number */
