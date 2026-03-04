@@ -1,5 +1,5 @@
-#ifndef VERSION_H
-#define VERSION_H
+#ifndef GFM_CLIENT_INTERNAL_H
+#define GFM_CLIENT_INTERNAL_H
 
 #include <gfarm/gfarm.h>
 
