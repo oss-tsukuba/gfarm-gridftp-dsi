@@ -92,7 +92,7 @@ For other settings of globus-gridftp-server, see the following:
 
 For settings of Gfarm globus-gridftp-server, see the following:
 
-<http://oss-tsukuba.org/gfarm/share/doc/gfarm/html/en/ref/man5/gfarm2.conf.5.html>
+<https://oss-tsukuba.org/share/doc/gfarm/html/en/ref/man5/gfarm2.conf.5.html>
 
 ### Environment Variables
 
