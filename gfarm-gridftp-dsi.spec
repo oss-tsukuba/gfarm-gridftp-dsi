@@ -23,6 +23,9 @@ make
 %install
 rm -rf $RPM_BUILD_ROOT
 %makeinstall
+# libtool archives are not needed at runtime or for development and are
+# removed by redhat-rpm-config on newer RHEL derivatives.
+find %{buildroot} -name '*.la' -delete
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -33,7 +36,6 @@ rm -rf $RPM_BUILD_ROOT
 %doc RELNOTES
 %doc LICENSE
 %{_libdir}/libglobus_gridftp_server_gfarm.a
-%{_libdir}/libglobus_gridftp_server_gfarm.la
 %{_libdir}/libglobus_gridftp_server_gfarm.so
 %{_libdir}/libglobus_gridftp_server_gfarm.so.0
 %{_libdir}/libglobus_gridftp_server_gfarm.so.0.0.0
